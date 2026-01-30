@@ -104,9 +104,11 @@ jobs:
       - name: Configure manual signing
         run: |
           cd ios
-          # Disable automatic signing and set manual signing
+          # Disable automatic signing and set manual signing for Release
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
-          sed -i '' 's/DEVELOPMENT_TEAM = SPL85G447K;/DEVELOPMENT_TEAM = SPL85G447K;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "XDECA Internal App Store";/g' Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer";/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";/g' Runner.xcodeproj/project.pbxproj
+          # Add provisioning profile specifier
+          sed -i '' 's/DEVELOPMENT_TEAM = SPL85G447K;/DEVELOPMENT_TEAM = SPL85G447K;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "XDECA Internal App Store";\n\t\t\t\t"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution";/g' Runner.xcodeproj/project.pbxproj
 
       - name: Build IPA
         run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
