@@ -1,16 +1,37 @@
-# xdeca
+# XDECA Internal
 
-A new Flutter project.
+Internal team app for XDECA.
 
-## Getting Started
+## Features
 
-This project is a starting point for a Flutter application.
+- **Team Activity Log** - View team updates from GitHub-hosted log file with push notifications
+- **Meeting Recorder** - Record meetings, transcribe with AI, upload to wiki
 
-A few resources to get you started if this is your first Flutter project:
+## Installation
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+**iOS**: Join TestFlight via internal invite link
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Android**: Join Play Store internal testing via invite link
+
+## Deployment
+
+Push a version tag to deploy:
+
+```bash
+git tag v1.0.XX
+git push origin v1.0.XX
+```
+
+Builds automatically deploy to TestFlight and Play Store internal track.
+
+## Development
+
+```bash
+flutter pub get
+flutter run
+```
+
+## Links
+
+- [GitHub Repo](https://github.com/10xdeca/xdeca-internal-app)
+- [Privacy Policy](https://gist.github.com/nickmeinhold/d7c269286892c92975ab13d54b3376c5)
