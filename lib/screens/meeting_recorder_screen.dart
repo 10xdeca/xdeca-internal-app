@@ -238,10 +238,11 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
           ),
           TextButton(
             onPressed: () async {
+              final nav = Navigator.of(context);
               await prefs.setString('openai_api_key', openaiController.text);
               await prefs.setString('outline_url', outlineUrlController.text);
               await prefs.setString('outline_api_token', outlineTokenController.text);
-              if (mounted) Navigator.pop(context);
+              if (mounted) nav.pop();
             },
             child: const Text('Save'),
           ),
