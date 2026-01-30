@@ -64,7 +64,7 @@ jobs:
           packageName: com.xdeca.internal
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           track: internal
-          status: draft
+          status: completed
 
   build-and-deploy-ios:
     runs-on: macos-26
