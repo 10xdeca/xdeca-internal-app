@@ -104,6 +104,7 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
     final openaiKey = prefs.getString('openai_api_key');
     final outlineUrl = prefs.getString('outline_url') ?? 'https://wiki.xdeca.com';
     final outlineToken = prefs.getString('outline_api_token');
+    final collectionId = prefs.getString('outline_collection_id');
 
     if (openaiKey == null || openaiKey.isEmpty) {
       _showSettingsDialog('OpenAI API key required');
@@ -112,6 +113,11 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
 
     if (outlineToken == null || outlineToken.isEmpty) {
       _showSettingsDialog('Outline API token required');
+      return;
+    }
+
+    if (collectionId == null || collectionId.isEmpty) {
+      _showSettingsDialog('Outline collection required');
       return;
     }
 
@@ -138,6 +144,7 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
       final document = await outlineService.createDocument(
         title: title,
         text: '# $title\n\n**Recorded:** ${DateTime.now().toString().substring(0, 16)}\n\n**Duration:** ${_formatDuration(_recordingDuration)}\n\n---\n\n## Transcript\n\n$transcript',
+        collectionId: collectionId,
       );
 
       // Track usage
@@ -193,60 +200,136 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
     final openaiController = TextEditingController(text: prefs.getString('openai_api_key') ?? '');
     final outlineUrlController = TextEditingController(text: prefs.getString('outline_url') ?? 'https://wiki.xdeca.com');
     final outlineTokenController = TextEditingController(text: prefs.getString('outline_api_token') ?? '');
+    String? selectedCollectionId = prefs.getString('outline_collection_id');
+    String? selectedCollectionName = prefs.getString('outline_collection_name');
+    List<Map<String, dynamic>> collections = [];
+    bool loadingCollections = false;
 
     if (!mounted) return;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('API Settings'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: openaiController,
-                decoration: const InputDecoration(
-                  labelText: 'OpenAI API Key',
-                  hintText: 'sk-...',
-                ),
-                obscureText: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          Future<void> fetchCollections() async {
+            if (outlineUrlController.text.isEmpty || outlineTokenController.text.isEmpty) {
+              return;
+            }
+            setDialogState(() => loadingCollections = true);
+            try {
+              final service = OutlineService(
+                baseUrl: outlineUrlController.text,
+                apiToken: outlineTokenController.text,
+              );
+              final result = await service.getCollections();
+              setDialogState(() {
+                collections = result;
+                loadingCollections = false;
+              });
+            } catch (e) {
+              setDialogState(() => loadingCollections = false);
+            }
+          }
+
+          return AlertDialog(
+            title: const Text('API Settings'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: openaiController,
+                    decoration: const InputDecoration(
+                      labelText: 'OpenAI API Key',
+                      hintText: 'sk-...',
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: outlineUrlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Outline Wiki URL',
+                      hintText: 'https://wiki.xdeca.com',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: outlineTokenController,
+                    decoration: const InputDecoration(
+                      labelText: 'Outline API Token',
+                    ),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: collections.isEmpty
+                            ? Text(
+                                selectedCollectionName ?? 'No collection selected',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              )
+                            : DropdownButton<String>(
+                                value: selectedCollectionId,
+                                hint: const Text('Select collection'),
+                                isExpanded: true,
+                                items: collections.map((c) {
+                                  return DropdownMenuItem<String>(
+                                    value: c['id'] as String,
+                                    child: Text(c['name'] as String),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  final collection = collections.firstWhere((c) => c['id'] == value);
+                                  setDialogState(() {
+                                    selectedCollectionId = value;
+                                    selectedCollectionName = collection['name'] as String;
+                                  });
+                                },
+                              ),
+                      ),
+                      const SizedBox(width: 8),
+                      loadingCollections
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.refresh),
+                              onPressed: fetchCollections,
+                              tooltip: 'Load collections',
+                            ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: outlineUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Outline Wiki URL',
-                  hintText: 'https://wiki.xdeca.com',
-                ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: outlineTokenController,
-                decoration: const InputDecoration(
-                  labelText: 'Outline API Token',
-                ),
-                obscureText: true,
+              TextButton(
+                onPressed: () async {
+                  final nav = Navigator.of(context);
+                  await prefs.setString('openai_api_key', openaiController.text);
+                  await prefs.setString('outline_url', outlineUrlController.text);
+                  await prefs.setString('outline_api_token', outlineTokenController.text);
+                  if (selectedCollectionId != null) {
+                    await prefs.setString('outline_collection_id', selectedCollectionId!);
+                  }
+                  if (selectedCollectionName != null) {
+                    await prefs.setString('outline_collection_name', selectedCollectionName!);
+                  }
+                  if (mounted) nav.pop();
+                },
+                child: const Text('Save'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final nav = Navigator.of(context);
-              await prefs.setString('openai_api_key', openaiController.text);
-              await prefs.setString('outline_url', outlineUrlController.text);
-              await prefs.setString('outline_api_token', outlineTokenController.text);
-              if (mounted) nav.pop();
-            },
-            child: const Text('Save'),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
