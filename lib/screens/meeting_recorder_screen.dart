@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/transcription_service.dart';
 import '../services/outline_service.dart';
 
+const double kWhisperCostPerMinute = 0.006;
+
 class MeetingRecorderScreen extends StatefulWidget {
   const MeetingRecorderScreen({super.key});
 
@@ -24,10 +26,31 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
   String _status = 'Ready to record';
   final _titleController = TextEditingController();
 
+  // Usage tracking
+  int _totalMinutesTranscribed = 0;
+  double _totalCost = 0.0;
+
   @override
   void initState() {
     super.initState();
     _titleController.text = 'Meeting ${DateTime.now().toString().substring(0, 16)}';
+    _loadUsageStats();
+  }
+
+  Future<void> _loadUsageStats() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _totalMinutesTranscribed = prefs.getInt('total_minutes_transcribed') ?? 0;
+      _totalCost = prefs.getDouble('total_transcription_cost') ?? 0.0;
+    });
+  }
+
+  Future<void> _saveUsageStats(int minutes) async {
+    final prefs = await SharedPreferences.getInstance();
+    _totalMinutesTranscribed += minutes;
+    _totalCost = _totalMinutesTranscribed * kWhisperCostPerMinute;
+    await prefs.setInt('total_minutes_transcribed', _totalMinutesTranscribed);
+    await prefs.setDouble('total_transcription_cost', _totalCost);
   }
 
   @override
@@ -116,6 +139,10 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
         title: title,
         text: '# $title\n\n**Recorded:** ${DateTime.now().toString().substring(0, 16)}\n\n**Duration:** ${_formatDuration(_recordingDuration)}\n\n---\n\n## Transcript\n\n$transcript',
       );
+
+      // Track usage
+      final minutes = (_recordingDuration.inSeconds / 60).ceil();
+      await _saveUsageStats(minutes);
 
       setState(() {
         _status = 'Uploaded successfully!';
@@ -290,11 +317,59 @@ class _MeetingRecorderScreenState extends State<MeetingRecorderScreen> {
               ElevatedButton.icon(
                 onPressed: _transcribeAndUpload,
                 icon: const Icon(Icons.upload),
-                label: const Text('Transcribe & Upload to Wiki'),
+                label: Text('Transcribe & Upload (~\$${_estimateCost().toStringAsFixed(3)})'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 ),
               ),
+            const Spacer(),
+            _buildUsageCard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _estimateCost() {
+    final minutes = (_recordingDuration.inSeconds / 60).ceil();
+    return minutes * kWhisperCostPerMinute;
+  }
+
+  Widget _buildUsageCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              children: [
+                const Icon(Icons.timer_outlined, size: 24),
+                const SizedBox(height: 4),
+                Text(
+                  '$_totalMinutesTranscribed min',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  'transcribed',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            Column(
+              children: [
+                const Icon(Icons.attach_money, size: 24),
+                const SizedBox(height: 4),
+                Text(
+                  '\$${_totalCost.toStringAsFixed(2)}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  'total cost',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
           ],
         ),
       ),
