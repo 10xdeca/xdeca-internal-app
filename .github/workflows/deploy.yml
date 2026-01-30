@@ -9,7 +9,7 @@ env:
   FLUTTER_VERSION: '3.38.7'
 
 jobs:
-  build-android:
+  build-and-deploy-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,7 +53,7 @@ jobs:
           track: internal
           status: draft
 
-  build-ios:
+  build-and-deploy-ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
