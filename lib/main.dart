@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/meeting_recorder_screen.dart';
 
 const String kGitHubRawUrl = 'https://raw.githubusercontent.com/10xdeca/internal/main/team.log';
 const String kLastContentHashKey = 'last_content_hash';
@@ -110,7 +111,7 @@ class XdecaApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const MainNavigation(),
     );
   }
 }
@@ -120,6 +121,45 @@ class HomePage extends StatefulWidget {
 
   @override
   State<HomePage> createState() => _HomePageState();
+}
+
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+  int _currentIndex = 0;
+
+  final _screens = const [
+    HomePage(),
+    MeetingRecorderScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.list),
+            selectedIcon: Icon(Icons.list_alt),
+            label: 'Team Log',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.mic),
+            selectedIcon: Icon(Icons.mic_rounded),
+            label: 'Meetings',
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _HomePageState extends State<HomePage> {

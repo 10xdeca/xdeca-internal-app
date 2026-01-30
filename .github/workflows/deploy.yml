@@ -94,8 +94,19 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
 
+          # Get provisioning profile UUID
+          PP_UUID=$(/usr/libexec/PlistBuddy -c "Print UUID" /dev/stdin <<< $(/usr/bin/security cms -D -i $PP_PATH))
+          echo "PP_UUID=$PP_UUID" >> $GITHUB_ENV
+
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Configure manual signing
+        run: |
+          cd ios
+          # Disable automatic signing and set manual signing
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
+          sed -i '' 's/DEVELOPMENT_TEAM = SPL85G447K;/DEVELOPMENT_TEAM = SPL85G447K;\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "XDECA Internal App Store";/g' Runner.xcodeproj/project.pbxproj
 
       - name: Build IPA
         run: flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
