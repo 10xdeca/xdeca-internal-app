@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:workmanager/workmanager.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 const String kGitHubRawUrl = 'https://raw.githubusercontent.com/10xdeca/internal/main/team.log';
 const String kLastContentHashKey = 'last_content_hash';
@@ -55,6 +57,11 @@ Future<void> checkForUpdates() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // Initialize notifications
   const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');

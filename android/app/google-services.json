@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "544622876862",
+    "project_id": "xdeca-internal",
+    "storage_bucket": "xdeca-internal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544622876862:android:586bbe22950b28ccfe66ef",
+        "android_client_info": {
+          "package_name": "com.xdeca.internal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCN_4zYhuGRge2E_GgU3206hLxuw7KUhMo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
