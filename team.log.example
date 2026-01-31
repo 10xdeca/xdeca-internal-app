@@ -1,8 +1,0 @@
-[2025-01-30 10:00] @nick: Created the XDECA Internal app - team activity log viewer with notifications
-[2025-01-30 10:15] @alexar: First to test the Android APK!
-[2025-01-30 10:30] @system: Repository initialized with team.log
-
-# Log Format Guide
-# Each entry should follow: [YYYY-MM-DD HH:MM] @username: message
-# System messages can omit the @username
-# The app displays newest entries first
