@@ -45,8 +45,8 @@ export async function createUserLink(data: {
   telegramUserId: number;
   telegramUsername?: string;
   kanUserEmail: string;
-  kanApiKey: string;
   workspaceMemberPublicId?: string;
+  createdByTelegramUserId?: number;
 }) {
   return db.insert(schema.telegramUserLinks).values(data).run();
 }
@@ -55,7 +55,7 @@ export async function updateUserLink(
   telegramUserId: number,
   data: Partial<{
     telegramUsername: string;
-    kanApiKey: string;
+    kanUserEmail: string;
     workspaceMemberPublicId: string;
   }>
 ) {
@@ -64,6 +64,15 @@ export async function updateUserLink(
     .set(data)
     .where(eq(schema.telegramUserLinks.telegramUserId, telegramUserId))
     .run();
+}
+
+export async function getUserLinkByTelegramUsername(username: string) {
+  const results = db
+    .select()
+    .from(schema.telegramUserLinks)
+    .where(eq(schema.telegramUserLinks.telegramUsername, username))
+    .all();
+  return results[0] || null;
 }
 
 export async function deleteUserLink(telegramUserId: number) {

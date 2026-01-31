@@ -471,4 +471,18 @@ export function createKanClient(apiKey: string): KanApiClient {
   return new KanApiClient(apiKey);
 }
 
+// Get the service client using the KAN_SERVICE_API_KEY env var
+let serviceClient: KanApiClient | null = null;
+
+export function getServiceClient(): KanApiClient {
+  if (!serviceClient) {
+    const apiKey = process.env.KAN_SERVICE_API_KEY;
+    if (!apiKey) {
+      throw new Error("KAN_SERVICE_API_KEY environment variable is required");
+    }
+    serviceClient = new KanApiClient(apiKey);
+  }
+  return serviceClient;
+}
+
 export { KanApiClient };

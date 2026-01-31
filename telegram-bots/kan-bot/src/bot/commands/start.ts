@@ -1,10 +1,9 @@
 import type { Context } from "grammy";
-import { createKanClient } from "../../api/kan-client.js";
+import { getServiceClient } from "../../api/kan-client.js";
 import {
   createWorkspaceLink,
   deleteWorkspaceLink,
   getWorkspaceLink,
-  getUserLink,
 } from "../../db/queries.js";
 
 export async function startCommand(ctx: Context) {
@@ -36,26 +35,13 @@ export async function startCommand(ctx: Context) {
         "To get started, link this chat to a Kan workspace:\n" +
         "`/start <workspace-slug-or-id>`\n\n" +
         "Example: `/start my-team`\n\n" +
-        "You'll also need to link your personal account:\n" +
-        "`/link <your-kan-api-key>`",
+        "Then map team members with `/map` (DM me as admin).",
       { parse_mode: "Markdown" }
     );
     return;
   }
 
-  // User needs to have linked their account first to look up workspaces
-  const userLink = await getUserLink(userId);
-  if (!userLink) {
-    await ctx.reply(
-      "You need to link your Kan account first.\n\n" +
-        "Use `/link <your-kan-api-key>` to connect your account.\n\n" +
-        "You can find your API key in Kan under Settings > API.",
-      { parse_mode: "Markdown" }
-    );
-    return;
-  }
-
-  const client = createKanClient(userLink.kanApiKey);
+  const client = getServiceClient();
 
   try {
     // Try to find the workspace

@@ -1,6 +1,6 @@
 import type { AuthContext } from "../middleware/auth.js";
-import { getUserLink, getWorkspaceLink } from "../../db/queries.js";
-import { createKanClient } from "../../api/kan-client.js";
+import { getWorkspaceLink } from "../../db/queries.js";
+import { getServiceClient } from "../../api/kan-client.js";
 
 export async function doneCommand(ctx: AuthContext) {
   const userId = ctx.from?.id;
@@ -24,17 +24,6 @@ export async function doneCommand(ctx: AuthContext) {
 
   const cardPublicId = args[0];
 
-  // Get user link
-  const userLink = await getUserLink(userId);
-  if (!userLink) {
-    await ctx.reply(
-      "You haven't linked your Kan account yet.\n\n" +
-        "Use `/link <your-kan-api-key>` to connect your account.",
-      { parse_mode: "Markdown" }
-    );
-    return;
-  }
-
   // Get workspace link
   const workspaceLink = await getWorkspaceLink(chatId);
   if (!workspaceLink) {
@@ -46,7 +35,7 @@ export async function doneCommand(ctx: AuthContext) {
     return;
   }
 
-  const client = createKanClient(userLink.kanApiKey);
+  const client = getServiceClient();
 
   try {
     // Get the card first to find its board

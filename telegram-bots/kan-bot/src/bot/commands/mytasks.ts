@@ -1,6 +1,6 @@
 import type { AuthContext } from "../middleware/auth.js";
 import { getUserLink, getWorkspaceLink } from "../../db/queries.js";
-import { createKanClient } from "../../api/kan-client.js";
+import { getServiceClient } from "../../api/kan-client.js";
 import { formatCardList } from "../../utils/format.js";
 
 export async function myTasksCommand(ctx: AuthContext) {
@@ -12,12 +12,12 @@ export async function myTasksCommand(ctx: AuthContext) {
     return;
   }
 
-  // Get user link
+  // Get user link to find their email
   const userLink = await getUserLink(userId);
   if (!userLink) {
     await ctx.reply(
-      "You haven't linked your Kan account yet.\n\n" +
-        "Use `/link <your-kan-api-key>` to connect your account.",
+      "Your account hasn't been mapped yet.\n\n" +
+        "Ask an admin to run: `/map @yourusername your@email.com`",
       { parse_mode: "Markdown" }
     );
     return;
@@ -34,7 +34,7 @@ export async function myTasksCommand(ctx: AuthContext) {
     return;
   }
 
-  const client = createKanClient(userLink.kanApiKey);
+  const client = getServiceClient();
 
   try {
     // Get workspace members to find this user's member ID

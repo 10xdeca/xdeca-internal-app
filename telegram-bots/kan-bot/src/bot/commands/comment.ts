@@ -1,14 +1,13 @@
 import type { AuthContext } from "../middleware/auth.js";
-import { getUserLink, getWorkspaceLink } from "../../db/queries.js";
-import { createKanClient } from "../../api/kan-client.js";
+import { getWorkspaceLink } from "../../db/queries.js";
+import { getServiceClient } from "../../api/kan-client.js";
 
 export async function commentCommand(ctx: AuthContext) {
-  const userId = ctx.from?.id;
   const chatId = ctx.chat?.id;
   const args = ctx.message?.text?.split(" ").slice(1);
 
-  if (!userId || !chatId) {
-    await ctx.reply("Could not identify user or chat.");
+  if (!chatId) {
+    await ctx.reply("Could not identify chat.");
     return;
   }
 
@@ -30,17 +29,6 @@ export async function commentCommand(ctx: AuthContext) {
     return;
   }
 
-  // Get user link
-  const userLink = await getUserLink(userId);
-  if (!userLink) {
-    await ctx.reply(
-      "You haven't linked your Kan account yet.\n\n" +
-        "Use `/link <your-kan-api-key>` to connect your account.",
-      { parse_mode: "Markdown" }
-    );
-    return;
-  }
-
   // Get workspace link (for context)
   const workspaceLink = await getWorkspaceLink(chatId);
   if (!workspaceLink) {
@@ -52,7 +40,7 @@ export async function commentCommand(ctx: AuthContext) {
     return;
   }
 
-  const client = createKanClient(userLink.kanApiKey);
+  const client = getServiceClient();
 
   try {
     // First verify the card exists

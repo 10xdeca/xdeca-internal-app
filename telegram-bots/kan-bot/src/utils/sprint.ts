@@ -1,9 +1,10 @@
 // Sprint timing utilities
-// Sprints are 2 weeks, starting on Monday
+// Sprints are 13 days, starting on Sunday and ending on Friday
+// Saturday is a break day between sprints
 
-const SPRINT_LENGTH_DAYS = 14;
+const SPRINT_LENGTH_DAYS = 14; // 13 sprint days + 1 break day
 
-// Get a known sprint start date from env, or default to a Monday
+// Get a known sprint start date from env, or default to a Sunday
 // This can be any past sprint start - we'll calculate from there
 function getSprintEpoch(): Date {
   const envDate = process.env.SPRINT_START_DATE;
@@ -13,15 +14,17 @@ function getSprintEpoch(): Date {
       return date;
     }
   }
-  // Default: Jan 6, 2025 (a Monday)
-  return new Date("2025-01-06");
+  // Default: Jan 5, 2025 (a Sunday)
+  return new Date("2025-01-05");
 }
 
 /**
  * Get the current day of the sprint (1-14)
- * Day 1 = Monday of sprint start
- * Day 6 = Saturday (mid-sprint touchpoint)
- * Day 14 = Sunday (retro day)
+ * Day 1 = Sunday (sprint start)
+ * Day 2 = Monday
+ * Day 7 = Saturday (mid-sprint)
+ * Day 13 = Friday (sprint end)
+ * Day 14 = Saturday (break day)
  */
 export function getSprintDay(now: Date = new Date()): number {
   const epoch = getSprintEpoch();
@@ -38,23 +41,31 @@ export function getSprintDay(now: Date = new Date()): number {
 /**
  * Check if we're in the sprint planning window (days 1-2)
  * This is when we should nag about vague tasks and missing due dates
+ * Day 1 = Sunday, Day 2 = Monday
  */
 export function isSprintPlanningWindow(now: Date = new Date()): boolean {
   const day = getSprintDay(now);
-  return day <= 2; // Monday and Tuesday of sprint start
+  return day <= 2; // Sunday and Monday of sprint start
 }
 
 /**
- * Check if it's the mid-sprint touchpoint day (Saturday, day 6)
+ * Check if it's the mid-sprint day (Saturday, day 7)
  */
 export function isMidSprintDay(now: Date = new Date()): boolean {
-  return getSprintDay(now) === 6;
+  return getSprintDay(now) === 7;
 }
 
 /**
- * Check if it's retro day (Sunday, day 14)
+ * Check if it's the last day of sprint (Friday, day 13)
  */
-export function isRetroDay(now: Date = new Date()): boolean {
+export function isSprintEndDay(now: Date = new Date()): boolean {
+  return getSprintDay(now) === 13;
+}
+
+/**
+ * Check if it's break day (Saturday, day 14)
+ */
+export function isBreakDay(now: Date = new Date()): boolean {
   return getSprintDay(now) === 14;
 }
 
@@ -65,13 +76,15 @@ export function getSprintInfo(now: Date = new Date()): {
   day: number;
   isPlanningWindow: boolean;
   isMidSprint: boolean;
-  isRetro: boolean;
+  isSprintEnd: boolean;
+  isBreak: boolean;
 } {
   const day = getSprintDay(now);
   return {
     day,
     isPlanningWindow: day <= 2,
-    isMidSprint: day === 6,
-    isRetro: day === 14,
+    isMidSprint: day === 7,
+    isSprintEnd: day === 13,
+    isBreak: day === 14,
   };
 }

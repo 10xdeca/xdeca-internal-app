@@ -8,6 +8,7 @@ import "./db/client.js";
 // Import commands
 import { startCommand, unlinkCommand } from "./bot/commands/start.js";
 import { linkCommand, unlinkMeCommand } from "./bot/commands/link.js";
+import { mapCommand } from "./bot/commands/map.js";
 import { myTasksCommand } from "./bot/commands/mytasks.js";
 import { overdueCommand } from "./bot/commands/overdue.js";
 import { doneCommand } from "./bot/commands/done.js";
@@ -40,6 +41,7 @@ bot.command("start", startCommand);
 bot.command("unlink", unlinkCommand);
 bot.command("link", linkCommand);
 bot.command("unlinkme", unlinkMeCommand);
+bot.command("map", mapCommand);
 bot.command("mytasks", myTasksCommand);
 bot.command("overdue", overdueCommand);
 bot.command("done", doneCommand);

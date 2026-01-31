@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import type { Bot } from "grammy";
-import { createKanClient, type KanCard, type KanBoard, type KanList } from "../api/kan-client.js";
+import { getServiceClient, type KanCard, type KanBoard, type KanList, type KanApiClient } from "../api/kan-client.js";
 import {
   getAllWorkspaceLinks,
   getAllUserLinks,
@@ -44,7 +44,6 @@ type UserLink = {
   telegramUserId: number;
   telegramUsername: string | null;
   kanUserEmail: string;
-  kanApiKey: string;
 };
 
 type WorkspaceLink = {
@@ -98,13 +97,8 @@ async function checkAllTaskIssues(bot: Bot) {
       });
     }
 
-    if (userLinks.length === 0) {
-      console.log("No user links available, cannot check for task issues.");
-      return;
-    }
-
     for (const workspaceLink of workspaceLinks) {
-      await processWorkspace(bot, workspaceLink, userLinks, userLinksByEmail);
+      await processWorkspace(bot, workspaceLink, userLinksByEmail);
     }
   } catch (error) {
     console.error("Error in task checker:", error);
@@ -114,33 +108,19 @@ async function checkAllTaskIssues(bot: Bot) {
 async function processWorkspace(
   bot: Bot,
   workspaceLink: WorkspaceLink,
-  userLinks: UserLink[],
   userLinksByEmail: UserLinkMap
 ) {
-  // Find a user link that has access to this workspace
-  let client = null;
+  // Use the service client
+  let client;
   let workspaceSlug = "";
 
-  for (const link of userLinks) {
-    try {
-      const tempClient = createKanClient(link.kanApiKey);
-      const workspace = await tempClient.getWorkspace(
-        workspaceLink.workspacePublicId
-      );
-      if (workspace) {
-        client = tempClient;
-        workspaceSlug = workspace.slug;
-        break;
-      }
-    } catch {
-      // This user doesn't have access to this workspace
-      continue;
-    }
-  }
-
-  if (!client) {
+  try {
+    client = getServiceClient();
+    const workspace = await client.getWorkspace(workspaceLink.workspacePublicId);
+    workspaceSlug = workspace.slug;
+  } catch (error) {
     console.log(
-      `No user has access to workspace ${workspaceLink.workspaceName}, skipping.`
+      `Cannot access workspace ${workspaceLink.workspaceName}: ${error}`
     );
     return;
   }
@@ -229,7 +209,7 @@ async function sendReminderMessage(
 // Check for overdue tasks
 async function checkOverdueTasks(
   bot: Bot,
-  client: ReturnType<typeof createKanClient>,
+  client: KanApiClient,
   workspaceLink: WorkspaceLink,
   workspaceSlug: string,
   userLinksByEmail: UserLinkMap
@@ -273,7 +253,7 @@ async function checkOverdueTasks(
 // Check for tasks without due dates
 async function checkNoDueDates(
   bot: Bot,
-  client: ReturnType<typeof createKanClient>,
+  client: KanApiClient,
   workspaceLink: WorkspaceLink,
   workspaceSlug: string,
   userLinksByEmail: UserLinkMap
@@ -317,7 +297,7 @@ async function checkNoDueDates(
 // Check for vague tasks using LLM evaluation
 async function checkVagueTasks(
   bot: Bot,
-  client: ReturnType<typeof createKanClient>,
+  client: KanApiClient,
   workspaceLink: WorkspaceLink,
   workspaceSlug: string,
   userLinksByEmail: UserLinkMap
@@ -371,7 +351,7 @@ async function checkVagueTasks(
 // Check for stale tasks (in progress too long)
 async function checkStaleTasks(
   bot: Bot,
-  client: ReturnType<typeof createKanClient>,
+  client: KanApiClient,
   workspaceLink: WorkspaceLink,
   workspaceSlug: string,
   userLinksByEmail: UserLinkMap
@@ -414,7 +394,7 @@ async function checkStaleTasks(
 // Check for unassigned tasks
 async function checkUnassignedTasks(
   bot: Bot,
-  client: ReturnType<typeof createKanClient>,
+  client: KanApiClient,
   workspaceLink: WorkspaceLink,
   workspaceSlug: string
 ) {
@@ -450,7 +430,7 @@ async function checkUnassignedTasks(
 // Check for workspace members with no tasks assigned
 async function checkNoTasks(
   bot: Bot,
-  client: ReturnType<typeof createKanClient>,
+  client: KanApiClient,
   workspaceLink: WorkspaceLink,
   workspaceSlug: string,
   userLinksByEmail: UserLinkMap

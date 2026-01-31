@@ -1,25 +1,13 @@
 import type { AuthContext } from "../middleware/auth.js";
-import { getUserLink, getWorkspaceLink } from "../../db/queries.js";
-import { createKanClient } from "../../api/kan-client.js";
+import { getWorkspaceLink } from "../../db/queries.js";
+import { getServiceClient } from "../../api/kan-client.js";
 import { formatCardList } from "../../utils/format.js";
 
 export async function overdueCommand(ctx: AuthContext) {
-  const userId = ctx.from?.id;
   const chatId = ctx.chat?.id;
 
-  if (!userId || !chatId) {
-    await ctx.reply("Could not identify user or chat.");
-    return;
-  }
-
-  // Get user link
-  const userLink = await getUserLink(userId);
-  if (!userLink) {
-    await ctx.reply(
-      "You haven't linked your Kan account yet.\n\n" +
-        "Use `/link <your-kan-api-key>` to connect your account.",
-      { parse_mode: "Markdown" }
-    );
+  if (!chatId) {
+    await ctx.reply("Could not identify chat.");
     return;
   }
 
@@ -34,7 +22,7 @@ export async function overdueCommand(ctx: AuthContext) {
     return;
   }
 
-  const client = createKanClient(userLink.kanApiKey);
+  const client = getServiceClient();
 
   try {
     const workspace = await client.getWorkspace(workspaceLink.workspacePublicId);

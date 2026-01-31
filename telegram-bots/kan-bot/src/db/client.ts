@@ -28,9 +28,9 @@ sqlite.exec(`
     telegram_user_id INTEGER NOT NULL UNIQUE,
     telegram_username TEXT,
     kan_user_email TEXT NOT NULL,
-    kan_api_key TEXT NOT NULL,
     workspace_member_public_id TEXT,
-    created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    created_by_telegram_user_id INTEGER
   );
 
   CREATE TABLE IF NOT EXISTS telegram_reminders (

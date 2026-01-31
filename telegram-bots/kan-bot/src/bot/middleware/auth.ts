@@ -1,6 +1,6 @@
 import type { Context, NextFunction } from "grammy";
-import { getUserLink, getWorkspaceLink } from "../../db/queries.js";
-import { createKanClient, type KanApiClient } from "../../api/kan-client.js";
+import { getWorkspaceLink } from "../../db/queries.js";
+import { getServiceClient, type KanApiClient } from "../../api/kan-client.js";
 
 export interface AuthContext extends Context {
   kanClient?: KanApiClient;
@@ -8,25 +8,9 @@ export interface AuthContext extends Context {
   workspaceName?: string;
 }
 
-// Middleware that checks if the user has linked their Kan account
-export async function requireUserLink(ctx: AuthContext, next: NextFunction) {
-  const userId = ctx.from?.id;
-  if (!userId) {
-    await ctx.reply("Could not identify user.");
-    return;
-  }
-
-  const userLink = await getUserLink(userId);
-  if (!userLink) {
-    await ctx.reply(
-      "You haven't linked your Kan account yet.\n\n" +
-        "Use /link <your-kan-api-key> to connect your account.\n\n" +
-        "You can find your API key in Kan under Settings > API."
-    );
-    return;
-  }
-
-  ctx.kanClient = createKanClient(userLink.kanApiKey);
+// Middleware that provides the service client
+export async function provideClient(ctx: AuthContext, next: NextFunction) {
+  ctx.kanClient = getServiceClient();
   return next();
 }
 
@@ -49,12 +33,11 @@ export async function requireWorkspaceLink(ctx: AuthContext, next: NextFunction)
 
   ctx.workspacePublicId = workspaceLink.workspacePublicId;
   ctx.workspaceName = workspaceLink.workspaceName;
+  ctx.kanClient = getServiceClient();
   return next();
 }
 
-// Combined middleware for commands that need both
+// Combined middleware for commands that need workspace access
 export async function requireAuth(ctx: AuthContext, next: NextFunction) {
-  await requireUserLink(ctx, async () => {
-    await requireWorkspaceLink(ctx, next);
-  });
+  await requireWorkspaceLink(ctx, next);
 }
